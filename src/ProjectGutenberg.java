@@ -16,6 +16,11 @@ public class ProjectGutenberg {
         for (String[] s : interestingWords) {
             System.out.println("[" + s[0] + "," + s[1] + "]");
         }
+        System.out.println("20 Least Frequent Words");
+        String[][] leastFrequentWords = get20LeastFrequentWords(file);
+        for (String[] s : leastFrequentWords) {
+            System.out.println("[" + s[0] + "," + s[1] + "]");
+        }
     }
 
     public static int getTotalNumberOfWords(File file) throws IOException {
@@ -36,7 +41,7 @@ public class ProjectGutenberg {
         String line = "";
         String[] words;
         while ((line = bufferedReader.readLine()) != null) {
-            words = line.replaceAll("[^0-9a-zA-Z\\s]", "").toLowerCase().split("\\s+");
+            words = line.replaceAll("[\\-+]", " ").replaceAll("[^0-9a-zA-Z\\s]", "").toLowerCase().split("\\s+");
             for (String word : words) {
                 if (!uniqueWords.contains(word))
                     uniqueWords.add(word);
@@ -51,7 +56,7 @@ public class ProjectGutenberg {
         String line = "";
 
         while ((line = bufferedReader.readLine()) != null) {
-            String[] words = line.replaceAll("[^0-9a-zA-Z\\s]", "").toLowerCase().split("\\s+");
+            String[] words = line.replaceAll("[\\-+]", " ").replaceAll("[^0-9a-zA-Z\\s]", "").toLowerCase().split("\\s+");
             for (String word : words) {
                 if (!word.equals(""))
                     stringFrequencies.put(word, (stringFrequencies.getOrDefault(word, 0)) + 1);
@@ -94,7 +99,7 @@ public class ProjectGutenberg {
         String line = "";
 
         while ((line = bufferedReader.readLine()) != null) {
-            String[] words = line.replaceAll("[^0-9a-zA-Z\\s]", "").toLowerCase().split("\\s+");
+            String[] words = line.replaceAll("[\\-+]", " ").replaceAll("[^0-9a-zA-Z\\s]", "").toLowerCase().split("\\s+");
             for (String word : words) {
                 if (!word.equals("") && !commonWords.contains(word))
                     stringFrequencies.put(word, (stringFrequencies.getOrDefault(word, 0)) + 1);
@@ -117,6 +122,39 @@ public class ProjectGutenberg {
             result[index] = t;
             index--;
         }
+        return result;
+    }
+
+    public static String[][] get20LeastFrequentWords(File file) throws IOException {
+        HashMap<String, Integer> stringFrequencies = new HashMap<String, Integer>();
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+        String line = "";
+
+        while ((line = bufferedReader.readLine()) != null) {
+            String[] words = line.toLowerCase().replaceAll("[\\-+]", " ").replaceAll("[^0-9a-zA-Z\\s]", "").split("\\s+");
+            for (String word : words) {
+                if (!word.equals(""))
+                    stringFrequencies.put(word, (stringFrequencies.getOrDefault(word, 0)) + 1);
+            }
+        }
+
+        PriorityQueue<String> pq = new PriorityQueue<String>( (a, b) -> stringFrequencies.get(b).compareTo(stringFrequencies.get(a)));
+        for (String word : stringFrequencies.keySet()) {
+            pq.add(word);
+            if (pq.size() > 20) {
+                pq.poll();
+            }
+        }
+
+        String[][] result = new String[20][2];
+        int index = 19;
+        while (!pq.isEmpty() && index >= 0) {
+            String word = pq.poll();
+            String[] t = {word, Integer.toString(stringFrequencies.get(word))};
+            result[index] = t;
+            index--;
+        }
+
         return result;
     }
 }
