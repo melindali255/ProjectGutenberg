@@ -21,6 +21,11 @@ public class ProjectGutenberg {
         for (String[] s : leastFrequentWords) {
             System.out.println("[" + s[0] + "," + s[1] + "]");
         }
+        System.out.println("Word by Chapter");
+        int[] frequenciesPerChapter = getFrequencyOfWord(file, "darcy");
+        for (int i = 0; i < frequenciesPerChapter.length; i++) {
+            System.out.println(frequenciesPerChapter[i]);
+        }
     }
 
     public static int getTotalNumberOfWords(File file) throws IOException {
@@ -50,7 +55,7 @@ public class ProjectGutenberg {
         return uniqueWords.size();
     }
 
-    public static String[][] get20MostFrequentWords(File file) throws IOException {
+    public static HashMap<String, Integer> getStringFrequencies(File file) throws IOException {
         HashMap<String, Integer> stringFrequencies = new HashMap<String, Integer>();
         BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
         String line = "";
@@ -63,14 +68,10 @@ public class ProjectGutenberg {
             }
         }
 
-        PriorityQueue<String> pq = new PriorityQueue<String>( (a, b) -> stringFrequencies.get(a).compareTo(stringFrequencies.get(b)));
-        for (String word : stringFrequencies.keySet()) {
-            pq.add(word);
-            if (pq.size() > 20) {
-                pq.poll();
-            }
-        }
+        return stringFrequencies;
+    }
 
+    public static String[][] formatStringCount (PriorityQueue<String> pq, HashMap<String, Integer> stringFrequencies) {
         String[][] result = new String[20][2];
         int index = 19;
         while (!pq.isEmpty() && index >= 0) {
@@ -79,8 +80,19 @@ public class ProjectGutenberg {
             result[index] = t;
             index--;
         }
-
         return result;
+    }
+
+    public static String[][] get20MostFrequentWords(File file) throws IOException {
+        HashMap<String, Integer> stringFrequencies = getStringFrequencies(file);
+        PriorityQueue<String> pq = new PriorityQueue<String>( (a, b) -> stringFrequencies.get(a).compareTo(stringFrequencies.get(b)));
+        for (String word : stringFrequencies.keySet()) {
+            pq.add(word);
+            if (pq.size() > 20) {
+                pq.poll();
+            }
+        }
+        return formatStringCount(pq, stringFrequencies);
     }
 
     public static String[][] get20MostInterestingFrequentWords(File file) throws IOException {
@@ -94,50 +106,20 @@ public class ProjectGutenberg {
             commonWords.add(l.toLowerCase().replaceAll("\\s+", ""));
         }
 
-        HashMap<String, Integer> stringFrequencies = new HashMap<String, Integer>();
-        BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
-        String line = "";
-
-        while ((line = bufferedReader.readLine()) != null) {
-            String[] words = line.replaceAll("[\\-+]", " ").replaceAll("[^0-9a-zA-Z\\s]", "").toLowerCase().split("\\s+");
-            for (String word : words) {
-                if (!word.equals("") && !commonWords.contains(word))
-                    stringFrequencies.put(word, (stringFrequencies.getOrDefault(word, 0)) + 1);
-            }
-        }
-
-        PriorityQueue<String> pq = new PriorityQueue<String>( (a, b) -> stringFrequencies.get(a).compareTo(stringFrequencies.get(b)));
+        HashMap<String, Integer> stringFrequencies = getStringFrequencies(file);
+        PriorityQueue<String> pq = new PriorityQueue<String>(Comparator.comparing(stringFrequencies::get));
         for (String word : stringFrequencies.keySet()) {
-            pq.add(word);
+            if (!commonWords.contains(word))
+                pq.add(word);
             if (pq.size() > 20) {
                 pq.poll();
             }
         }
-
-        String[][] result = new String[20][2];
-        int index = 19;
-        while (!pq.isEmpty() && index >= 0) {
-            String word = pq.poll();
-            String[] t = {word, Integer.toString(stringFrequencies.get(word))};
-            result[index] = t;
-            index--;
-        }
-        return result;
+        return formatStringCount(pq, stringFrequencies);
     }
 
     public static String[][] get20LeastFrequentWords(File file) throws IOException {
-        HashMap<String, Integer> stringFrequencies = new HashMap<String, Integer>();
-        BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
-        String line = "";
-
-        while ((line = bufferedReader.readLine()) != null) {
-            String[] words = line.toLowerCase().replaceAll("[\\-+]", " ").replaceAll("[^0-9a-zA-Z\\s]", "").split("\\s+");
-            for (String word : words) {
-                if (!word.equals(""))
-                    stringFrequencies.put(word, (stringFrequencies.getOrDefault(word, 0)) + 1);
-            }
-        }
-
+        HashMap<String, Integer> stringFrequencies = getStringFrequencies(file);
         PriorityQueue<String> pq = new PriorityQueue<String>( (a, b) -> stringFrequencies.get(b).compareTo(stringFrequencies.get(a)));
         for (String word : stringFrequencies.keySet()) {
             pq.add(word);
@@ -145,16 +127,38 @@ public class ProjectGutenberg {
                 pq.poll();
             }
         }
+        return formatStringCount(pq, stringFrequencies);
+    }
 
-        String[][] result = new String[20][2];
-        int index = 19;
-        while (!pq.isEmpty() && index >= 0) {
-            String word = pq.poll();
-            String[] t = {word, Integer.toString(stringFrequencies.get(word))};
-            result[index] = t;
-            index--;
+    public static int[] getFrequencyOfWord(File file, String word) throws IOException {
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+        String line = "";
+
+        ArrayList<Integer> frequencies = new ArrayList<Integer>();
+
+        int chapterNumber = 1;
+
+        while ((line = bufferedReader.readLine()) != null) {
+            if (line.contains("Chapter " + chapterNumber)) {
+                //start counting occurrences of the word
+                int count = 0;
+                while ((line = bufferedReader.readLine()) != null && !line.contains("Chapter " + (chapterNumber + 1))) {
+                    String[] words = line.toLowerCase().replaceAll("[\\-+]", " ").replaceAll("[^0-9a-zA-Z\\s]", "").split("\\s+");
+                    for (String lineWord : words) {
+                        if (lineWord.equals(word))
+                            count++;
+                    }
+                }
+                frequencies.add(count);
+                chapterNumber++;
+            }
         }
 
+        int[] result = new int[frequencies.size()];
+
+        for (int i = 0; i < frequencies.size(); i++) {
+            result[i] = frequencies.get(i);
+        }
         return result;
     }
 }
