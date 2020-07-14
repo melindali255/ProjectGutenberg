@@ -23,9 +23,20 @@ public class ProjectGutenberg {
         }
         System.out.println("Word by Chapter");
         int[] frequenciesPerChapter = getFrequencyOfWord(file, "darcy");
+        String s = "[";
         for (int i = 0; i < frequenciesPerChapter.length; i++) {
-            System.out.println(frequenciesPerChapter[i]);
+            if (i == 0)
+                s += frequenciesPerChapter[i];
+            else
+                s += ", " + frequenciesPerChapter[i];
         }
+        System.out.println(s + "]");
+
+        System.out.println("Get Chapter by Quote");
+        System.out.println(getChapterQuoteAppears(file, "I declare after all there is no enjoyment like reading!"));
+
+        System.out.println("Generate Sentence");
+        System.out.println(generateSentence(file));
     }
 
     public static int getTotalNumberOfWords(File file) throws IOException {
@@ -85,7 +96,7 @@ public class ProjectGutenberg {
 
     public static String[][] get20MostFrequentWords(File file) throws IOException {
         HashMap<String, Integer> stringFrequencies = getStringFrequencies(file);
-        PriorityQueue<String> pq = new PriorityQueue<String>( (a, b) -> stringFrequencies.get(a).compareTo(stringFrequencies.get(b)));
+        PriorityQueue<String> pq = new PriorityQueue<String>(Comparator.comparing(stringFrequencies::get));
         for (String word : stringFrequencies.keySet()) {
             pq.add(word);
             if (pq.size() > 20) {
@@ -133,33 +144,84 @@ public class ProjectGutenberg {
     public static int[] getFrequencyOfWord(File file, String word) throws IOException {
         BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
         String line = "";
-
         ArrayList<Integer> frequencies = new ArrayList<Integer>();
 
-        int chapterNumber = 1;
+        //find first line with Chapter in it
+        while ((line = bufferedReader.readLine()) != null && !line.contains("Chapter ")) { }
 
-        while ((line = bufferedReader.readLine()) != null) {
-            if (line.contains("Chapter " + chapterNumber)) {
-                //start counting occurrences of the word
-                int count = 0;
-                while ((line = bufferedReader.readLine()) != null && !line.contains("Chapter " + (chapterNumber + 1))) {
-                    String[] words = line.toLowerCase().replaceAll("[\\-+]", " ").replaceAll("[^0-9a-zA-Z\\s]", "").split("\\s+");
-                    for (String lineWord : words) {
-                        if (lineWord.equals(word))
-                            count++;
-                    }
+        while (line != null) {
+            int count = 0;
+            while ((line = bufferedReader.readLine()) != null && !line.contains("Chapter ")) {
+                String[] words = line.toLowerCase().replaceAll("[\\-+]", " ").replaceAll("[^0-9a-zA-Z\\s]", "").split("\\s+");
+                for (String lineWord : words) {
+                    if (lineWord.equals(word))
+                        count++;
                 }
-                frequencies.add(count);
-                chapterNumber++;
             }
+            frequencies.add(count);
         }
 
         int[] result = new int[frequencies.size()];
-
         for (int i = 0; i < frequencies.size(); i++) {
             result[i] = frequencies.get(i);
         }
         return result;
+    }
+
+    public static int getChapterQuoteAppears(File file, String quote) throws IOException {
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+        String line = "";
+
+        //find first line with Chapter in it
+        while ((line = bufferedReader.readLine()) != null && !line.contains("Chapter ")) { }
+
+        int chapterNumber = 1;
+        String chapter = "";
+        while (line != null) {
+            chapter = "";
+            while ((line = bufferedReader.readLine()) != null && !line.contains("Chapter ")) {
+                chapter += " " + line;
+            }
+            if (chapter.contains(quote))
+                return chapterNumber;
+            chapterNumber++;
+        }
+        return -1;
+    }
+
+    public static String generateSentence(File file) throws IOException {
+        String sentence = "The";
+        String currentWord = "the";
+
+        HashMap<String, Integer> stringFrequencies = getStringFrequencies(file);
+        PriorityQueue<String> pq = new PriorityQueue<String>(Comparator.comparing(stringFrequencies::get));
+
+        ArrayList<String> nextWords = new ArrayList<String>();
+
+        for (int i = 0; i < 19; i++) {
+            //parse through book for possible next words
+            BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+            String line = "";
+            while ((line = bufferedReader.readLine()) != null) {
+                String[] words = line.replaceAll("[\\-+]", " ").replaceAll("[^0-9a-zA-Z\\s]", "").toLowerCase().split("\\s+");
+                for (int j = 0; j < words.length - 1; j++) {
+//                    if (words[j].equals(currentWord) && !pq.contains(words[j+1]))
+//                        pq.add(words[j+1]);
+                    if(words[j].equals(currentWord) && !nextWords.contains(words[j+1]))
+                        nextWords.add(words[j+1]);
+                }
+            }
+            //find most likely word and add it to the sentence
+//            String newWord = pq.poll();
+            //get random word in HashSet
+            int randomIndex = (int)(Math.floor(Math.random()*nextWords.size()));
+            String newWord = nextWords.get(randomIndex);
+            sentence += " " + newWord;
+            currentWord = newWord;
+            pq.clear();
+        }
+
+        return sentence + ".";
     }
 }
 
