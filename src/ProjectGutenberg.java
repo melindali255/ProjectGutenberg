@@ -3,26 +3,36 @@ import java.util.*;
 
 public class ProjectGutenberg {
     public static void main(String[] arg) throws IOException {
-        File file = new File("./1342.txt");
-        System.out.println(getTotalNumberOfWords(file));
-        System.out.println(getTotalUniqueWords(file));
+        File file = new File("./215-0.txt");
+        System.out.println("Total number of words: " + getTotalNumberOfWords(file));
+        System.out.println("Total number of unique words: " + getTotalUniqueWords(file));
+
         System.out.println("20 Most Frequent Words:");
         String[][] result = get20MostFrequentWords(file);
+        String frequentWords = "[";
         for (String[] s : result) {
-            System.out.println("[" + s[0] + "," + s[1] + "]");
+            frequentWords += "[" + s[0] + "," + s[1] + "]";
         }
+        System.out.println(frequentWords + "]");
+
         System.out.println("20 Most Interesting Frequent Words:");
         String[][] interestingWords = get20MostInterestingFrequentWords(file);
+        String interestingWordsString = "[";
         for (String[] s : interestingWords) {
-            System.out.println("[" + s[0] + "," + s[1] + "]");
+            interestingWordsString += "[" + s[0] + "," + s[1] + "]";
         }
+        System.out.println(interestingWordsString + "]");
+
         System.out.println("20 Least Frequent Words");
         String[][] leastFrequentWords = get20LeastFrequentWords(file);
+        String leastFrequentWordsString = "[";
         for (String[] s : leastFrequentWords) {
-            System.out.println("[" + s[0] + "," + s[1] + "]");
+            leastFrequentWordsString += "[" + s[0] + "," + s[1] + "]";
         }
+        System.out.println(leastFrequentWordsString + "]");
+
         System.out.println("Word by Chapter");
-        int[] frequenciesPerChapter = getFrequencyOfWord(file, "darcy");
+        int[] frequenciesPerChapter = getFrequencyOfWord(file, "spitz");
         String s = "[";
         for (int i = 0; i < frequenciesPerChapter.length; i++) {
             if (i == 0)
@@ -33,7 +43,7 @@ public class ProjectGutenberg {
         System.out.println(s + "]");
 
         System.out.println("Get Chapter by Quote");
-        System.out.println(getChapterQuoteAppears(file, "I declare after all there is no enjoyment like reading!"));
+        System.out.println(getChapterQuoteAppears(file, "Love, genuine passionate love, was his for the first time."));
 
         System.out.println("Generate Sentence");
         System.out.println(generateSentence(file));
